@@ -1,0 +1,6 @@
+{
+  "name": "proxy-organizze",
+  "version": "1.0.0",
+  "scripts": { "start": "node proxy-organizze.js" },
+  "engines": { "node": ">=18" }
+}
