@@ -129,6 +129,19 @@
   .progress-fill.warn{background:var(--amber);}
   .progress-fill.over{background:var(--red);}
 
+  /* Faturas */
+  .invoice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;}
+  .invoice-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem 1.25rem;}
+  .invoice-card-name{font-size:.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;}
+  .invoice-amount{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--text-primary);line-height:1.1;margin-bottom:.4rem;}
+  .invoice-amount.paid{color:var(--text-hint);}
+  .invoice-amount.open{color:var(--red);}
+  .invoice-meta{font-size:.75rem;color:var(--text-hint);display:flex;flex-direction:column;gap:2px;}
+  .invoice-status{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:20px;margin-bottom:.5rem;}
+  .invoice-status.paid{background:var(--green-bg);color:var(--green);}
+  .invoice-status.open{background:var(--red-bg);color:var(--red);}
+  .invoice-status.closing{background:var(--amber-bg);color:var(--amber);}
+
   .state-overlay{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;gap:1rem;color:var(--text-secondary);font-size:.85rem;text-align:center;}
   .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--text-secondary);border-radius:50%;animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -270,6 +283,15 @@
     </div>
   </div>
 
+  <!-- Faturas de Cartão -->
+  <div class="chart-card" id="invoicesCard" style="margin-bottom:1.25rem;">
+    <div class="section-header">
+      <div class="chart-title" style="margin:0;">Faturas de Cartão de Crédito</div>
+      <span id="invoicesSubtitle" style="font-size:.75rem;color:var(--text-hint);"></span>
+    </div>
+    <div id="invoicesList"><div class="state-overlay"><div class="spinner"></div></div></div>
+  </div>
+
   <!-- Transações -->
   <div class="transactions-card">
     <div class="section-header">
@@ -331,7 +353,7 @@ async function apiGet(endpoint) {
 const _now = new Date();
 let state = {
   mode:'month', year:_now.getFullYear(), month:_now.getMonth(), quarter:Math.floor(_now.getMonth()/3),
-  transactions:[], accounts:[], categories:[], budgets:[],
+  transactions:[], accounts:[], categories:[], budgets:[], creditCards:[], invoices:[],
   selectedAccounts: new Set(['all']),  // 'all' = todas selecionadas
 };
 
@@ -519,17 +541,37 @@ async function loadAllData() {
 
   try {
     const{start,end}=getDateRange();
-    const[accounts,categories,transactions,budgets]=await Promise.all([
+    const[accounts,categories,transactions,budgets,creditCards]=await Promise.all([
       apiGet('/accounts'),apiGet('/categories'),
       apiGet('/transactions?start_date='+fmt(start)+'&end_date='+fmt(end)),
       apiGet('/budgets'),
+      apiGet('/credit_cards'),
     ]);
     state.accounts=accounts; state.categories=categories;
     state.transactions=transactions; state.budgets=budgets;
+    state.creditCards=creditCards.filter(c=>!c.archived);
+
+    // Buscar fatura atual de cada cartão ativo em paralelo
+    const invoiceResults = await Promise.all(
+      state.creditCards.map(c =>
+        apiGet('/credit_cards/'+c.id+'/invoices').then(invs => {
+          // Encontrar a fatura do período atual (vencimento mais próximo de hoje ou futuro)
+          const today = new Date().toISOString().split('T')[0];
+          const sorted = [...invs].sort((a,b)=>a.date.localeCompare(b.date));
+          // Pega a fatura cuja data de fechamento já passou (fatura fechada atual ou mais recente)
+          // ou a aberta (ainda não fechou)
+          const current = sorted.find(inv => inv.date >= today) || sorted[sorted.length-1];
+          return current ? { ...current, cardName: c.name, dueDay: c.due_day, closingDay: c.closing_day } : null;
+        }).catch(()=>null)
+      )
+    );
+    state.invoices = invoiceResults.filter(Boolean);
+
     buildAccountPanel();
     buildCategorySelect();
     applyFilters();
     renderBudgets();
+    renderInvoices();
     document.getElementById('lastUpdateText').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   } catch(err) {
     console.error(err);
@@ -596,10 +638,12 @@ const accName = id => { const a=state.accounts.find(a=>String(a.id)===String(id)
    KPIs
 ══════════════════════════════════════════ */
 function renderKPIs(txs) {
-  const nonTransfer = txs.filter(t=>!isTransfer(t));
-  const rec  = nonTransfer.filter(t=>t.amount_cents>0).reduce((s,t)=>s+t.amount_cents,0);
-  const desp = nonTransfer.filter(t=>t.amount_cents<0).reduce((s,t)=>s+t.amount_cents,0);
+  // Transferências externas entram nos cálculos (são receita ou despesa real para as contas selecionadas)
+  // Transferências internas já foram removidas em applyFilters
+  const rec  = txs.filter(t=>t.amount_cents>0).reduce((s,t)=>s+t.amount_cents,0);
+  const desp = txs.filter(t=>t.amount_cents<0).reduce((s,t)=>s+t.amount_cents,0);
   const sal  = rec+desp;
+  const nonTransfer = txs.filter(t=>!isTransfer(t));
   const maior= nonTransfer.filter(t=>t.amount_cents<0).reduce((m,t)=>!m||t.amount_cents<m.amount_cents?t:m,null);
 
   document.getElementById('kpiReceitas').textContent = money(rec);
@@ -610,8 +654,8 @@ function renderKPIs(txs) {
     document.getElementById('kpiMaiorDespesa').textContent  = money(Math.abs(maior.amount_cents));
     document.getElementById('kpiMaiorDespesaCat').innerHTML = `<span class="tag">${catName(maior.category_id)}</span> ${maior.description}`;
   }
-  document.getElementById('kpiReceitasDelta').innerHTML = `<span class="tag green">${nonTransfer.filter(t=>t.amount_cents>0).length} lançamentos</span>`;
-  document.getElementById('kpiDespesasDelta').innerHTML = `<span class="tag red">${nonTransfer.filter(t=>t.amount_cents<0).length} lançamentos</span>`;
+  document.getElementById('kpiReceitasDelta').innerHTML = `<span class="tag green">${txs.filter(t=>t.amount_cents>0).length} lançamentos</span>`;
+  document.getElementById('kpiDespesasDelta').innerHTML = `<span class="tag red">${txs.filter(t=>t.amount_cents<0).length} lançamentos</span>`;
   document.getElementById('kpiSaldoDelta').innerHTML    = sal>=0?'<span class="up">▲ Positivo no período</span>':'<span class="down">▼ Negativo no período</span>';
 }
 
@@ -624,10 +668,10 @@ let cEv,cCat,cTend;
 function renderCharts(txs){ renderEvolucao(txs); renderCategorias(txs); renderTendencia(txs); }
 
 function renderEvolucao(txs) {
-  const nonTransfer = txs.filter(t=>!isTransfer(t));
+  // Incluir transferências externas no gráfico (já filtradas as internas)
   const isMes = state.mode==='month';
   const byKey={};
-  nonTransfer.forEach(t=>{
+  txs.forEach(t=>{
     const key=isMes?t.date:t.date.substring(0,7);
     if(!byKey[key])byKey[key]={r:0,d:0};
     if(t.amount_cents>0)byKey[key].r+=t.amount_cents; else byKey[key].d+=Math.abs(t.amount_cents);
@@ -651,9 +695,9 @@ function renderEvolucao(txs) {
 }
 
 function renderCategorias(txs) {
-  const nonTransfer=txs.filter(t=>!isTransfer(t));
+  // Categorias: apenas lançamentos com categoria definida (não-transferências)
   const byCat={};
-  nonTransfer.filter(t=>t.amount_cents<0).forEach(t=>{
+  txs.filter(t=>!isTransfer(t) && t.amount_cents<0).forEach(t=>{
     const n=catName(t.category_id);
     byCat[n]=(byCat[n]||0)+Math.abs(t.amount_cents);
   });
@@ -668,8 +712,8 @@ function renderCategorias(txs) {
 }
 
 function renderTendencia(txs) {
-  const nonTransfer=txs.filter(t=>!isTransfer(t));
-  const sorted=[...nonTransfer].sort((a,b)=>a.date.localeCompare(b.date));
+  // Saldo acumulado inclui transferências externas
+  const sorted=[...txs].sort((a,b)=>a.date.localeCompare(b.date));
   let acc=0;
   const pts=sorted.map(t=>{acc+=t.amount_cents;return{x:t.date,y:(acc/100).toFixed(2)};});
   const labels=pts.map(p=>new Date(p.x+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));
@@ -698,6 +742,67 @@ function renderBudgets() {
 }
 
 /* ══════════════════════════════════════════
+   FATURAS DE CARTÃO
+══════════════════════════════════════════ */
+function renderInvoices() {
+  const container = document.getElementById('invoicesList');
+  const subtitle  = document.getElementById('invoicesSubtitle');
+
+  if (!state.invoices.length) {
+    container.innerHTML = '<div class="state-overlay"><span style="color:var(--text-hint);">Nenhum cartão de crédito ativo encontrado.</span></div>';
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const totalOpen = state.invoices
+    .filter(inv => inv.balance_cents < 0)
+    .reduce((s, inv) => s + Math.abs(inv.balance_cents), 0);
+
+  subtitle.textContent = totalOpen > 0
+    ? money(totalOpen) + ' em aberto no total'
+    : 'Todas as faturas pagas';
+
+  const cards = state.invoices.map(inv => {
+    const dueDate     = new Date(inv.date + 'T00:00:00');
+    const closeDate   = new Date(inv.closing_date + 'T00:00:00');
+    const isPaid      = inv.balance_cents === 0 && inv.payment_amount_cents !== 0;
+    const isOpen      = inv.balance_cents < 0;
+    const isClosing   = !isPaid && !isOpen && closeDate > today; // fatura ainda aberta (acumulando)
+    const daysUntilDue = Math.round((dueDate - today) / (1000*60*60*24));
+
+    let statusCls, statusTxt;
+    if (isPaid) {
+      statusCls = 'paid'; statusTxt = 'Paga';
+    } else if (isClosing) {
+      statusCls = 'closing'; statusTxt = 'Em aberto (fechamento: '+closeDate.toLocaleDateString('pt-BR')+')';
+    } else {
+      statusCls = 'open';
+      statusTxt = daysUntilDue >= 0
+        ? 'Vence em '+daysUntilDue+' dia'+(daysUntilDue!==1?'s':'')
+        : 'Vencida há '+Math.abs(daysUntilDue)+' dia'+(Math.abs(daysUntilDue)!==1?'s':'');
+    }
+
+    const displayAmount = isOpen ? inv.balance_cents : inv.amount_cents;
+    const amountCls = isPaid ? 'paid' : 'open';
+
+    return `
+      <div class="invoice-item">
+        <div class="invoice-card-name">${inv.cardName}</div>
+        <div class="invoice-status ${statusCls}">${statusTxt}</div>
+        <div class="invoice-amount ${amountCls}">${money(Math.abs(displayAmount))}</div>
+        <div class="invoice-meta">
+          <span>Fechamento: ${closeDate.toLocaleDateString('pt-BR')}</span>
+          <span>Vencimento: ${dueDate.toLocaleDateString('pt-BR')}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="invoice-grid">${cards}</div>`;
+}
+
+/* ══════════════════════════════════════════
    TABELA DE TRANSAÇÕES
 ══════════════════════════════════════════ */
 function renderTransactions(txs) {
@@ -709,12 +814,15 @@ function renderTransactions(txs) {
     const dt=new Date(t.date+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'});
 
     if(isTransfer(t)){
-      // account_id = conta deste lançamento; oposite_account_id = conta oposta
       const thisAccName  = accName(t.account_id);
       const otherAccName = accName(t.oposite_account_id);
-      // Se saída (-): this é origem, other é destino. Se entrada (+): inverso.
-      const originName = t.amount_cents < 0 ? thisAccName  : otherAccName;
-      const destName   = t.amount_cents < 0 ? otherAccName : thisAccName;
+      const isOut        = t.amount_cents < 0;
+      const originName   = isOut ? thisAccName  : otherAccName;
+      const destName     = isOut ? otherAccName : thisAccName;
+      // Cor e label conforme direção do fluxo para as contas selecionadas
+      const tagCls  = isOut ? 'red'      : 'green';
+      const tagTxt  = isOut ? 'Transf. Saída' : 'Transf. Entrada';
+      const valCls  = isOut ? 'negative' : 'positive';
       return`<tr>
         <td style="color:var(--text-secondary);">${dt}</td>
         <td>
@@ -723,8 +831,8 @@ function renderTransactions(txs) {
         </td>
         <td>—</td>
         <td>${thisAccName}</td>
-        <td><span class="tag purple">Transferência</span></td>
-        <td class="tx-amount transfer">${money(Math.abs(t.amount_cents))}</td>
+        <td><span class="tag ${tagCls}">${tagTxt}</span></td>
+        <td class="tx-amount ${valCls}">${isOut ? '−' : '+'}${money(Math.abs(t.amount_cents))}</td>
       </tr>`;
     }
 
