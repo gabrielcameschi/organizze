@@ -1047,7 +1047,7 @@ async function openInvoiceModal(cardId, cardName, dueDate, closingDate) {
     const invoice  = invoices.find(inv => inv.date === dueDate) || invoices[invoices.length-1];
     if (!invoice) throw new Error('Fatura não encontrada.');
 
-    const items = await apiGet('/credit_cards/' + cardId + '/invoices/' + invoice.id + '/transactions');
+    const items = await apiGet('/transactions?credit_card_id=' + cardId + '&invoice_id=' + invoice.id);
 
     // Resumo
     const total    = Math.abs(invoice.amount_cents);
