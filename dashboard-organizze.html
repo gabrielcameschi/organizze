@@ -498,12 +498,13 @@ function transferAccountIds(t) {
   }
 }
 
-// Uma transferência é INTERNA se ambas as contas envolvidas
+// Uma transferência é INTERNA se AMBAS as contas (origem e destino)
 // estiverem dentro do conjunto de contas selecionadas.
+// Se apenas uma delas está no conjunto, a transferência é externa e deve aparecer.
 function isInternalTransfer(t, selectedIds) {
   if (!isTransfer(t)) return false;
-  if (state.selectedAccounts.has('all')) return true;
-  const { originId, destId } = transferAccountIds(t);
+  const originId = String(t.amount_cents < 0 ? t.account_id : t.oposite_account_id);
+  const destId   = String(t.amount_cents < 0 ? t.oposite_account_id : t.account_id);
   return selectedIds.has(originId) && selectedIds.has(destId);
 }
 
@@ -552,9 +553,19 @@ function applyFilters() {
 
   let txs = [...state.transactions];
 
-  // 1. Filtro de conta — usa account_id (campo real da API)
+  // 1. Filtro de conta
+  // Para lançamentos normais: filtra por account_id.
+  // Para transferências: mantém se ao menos UMA das contas está no conjunto selecionado
+  // (a outra pode ser externa — e deve aparecer na tabela).
+  // A remoção de transferências internas (ambas as contas no conjunto) é feita no passo 3.
   if (!state.selectedAccounts.has('all')) {
-    txs = txs.filter(t => selectedIds.has(String(t.account_id)));
+    txs = txs.filter(t => {
+      if (!isTransfer(t)) return selectedIds.has(String(t.account_id));
+      // Transferência: manter se ao menos uma conta está no conjunto
+      const thisId  = String(t.account_id);
+      const otherId = String(t.oposite_account_id);
+      return selectedIds.has(thisId) || selectedIds.has(otherId);
+    });
   }
 
   // 2. Filtro de categoria (transferências não têm categoria, não filtrar)
@@ -579,7 +590,7 @@ function applyFilters() {
 const BRL     = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 const money   = c => BRL.format(c/100);
 const catName = id => { const c=state.categories.find(c=>c.id===id); return c?c.name:'—'; };
-const accName = id => { const a=state.accounts.find(a=>a.id===id); return a?a.name:'—'; };
+const accName = id => { const a=state.accounts.find(a=>String(a.id)===String(id)); return a?a.name:'—'; };
 
 /* ══════════════════════════════════════════
    KPIs
@@ -698,9 +709,12 @@ function renderTransactions(txs) {
     const dt=new Date(t.date+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'});
 
     if(isTransfer(t)){
-      const { originId, destId } = transferAccountIds(t);
-      const originName = accName(originId);
-      const destName   = accName(destId);
+      // account_id = conta deste lançamento; oposite_account_id = conta oposta
+      const thisAccName  = accName(t.account_id);
+      const otherAccName = accName(t.oposite_account_id);
+      // Se saída (-): this é origem, other é destino. Se entrada (+): inverso.
+      const originName = t.amount_cents < 0 ? thisAccName  : otherAccName;
+      const destName   = t.amount_cents < 0 ? otherAccName : thisAccName;
       return`<tr>
         <td style="color:var(--text-secondary);">${dt}</td>
         <td>
@@ -708,7 +722,7 @@ function renderTransactions(txs) {
           <div class="transfer-route">${originName}<span class="transfer-arrow">→</span>${destName}</div>
         </td>
         <td>—</td>
-        <td>${originName}</td>
+        <td>${thisAccName}</td>
         <td><span class="tag purple">Transferência</span></td>
         <td class="tx-amount transfer">${money(Math.abs(t.amount_cents))}</td>
       </tr>`;
