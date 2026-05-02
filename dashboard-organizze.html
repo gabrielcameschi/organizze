@@ -541,9 +541,11 @@ async function loadAllData() {
 
   try {
     const{start,end}=getDateRange();
+    const startStr = fmt(start);
+    const endStr   = fmt(end);
     const[accounts,categories,transactions,budgets,creditCards]=await Promise.all([
       apiGet('/accounts'),apiGet('/categories'),
-      apiGet('/transactions?start_date='+fmt(start)+'&end_date='+fmt(end)),
+      apiGet('/transactions?start_date='+startStr+'&end_date='+endStr),
       apiGet('/budgets'),
       apiGet('/credit_cards'),
     ]);
@@ -552,8 +554,8 @@ async function loadAllData() {
     state.creditCards=creditCards.filter(c=>!c.archived);
 
     // Buscar conta de pagamento de cada cartão consultando histórico de 12 meses
-    const histStart = fmt(new Date(start.slice(0,4), +start.slice(5,7)-13, 1));
-    const histTxs = await apiGet('/transactions?start_date='+histStart+'&end_date='+fmt(end)).catch(()=>[]);
+    const histStart = fmt(new Date(start.getFullYear(), start.getMonth()-12, 1));
+    const histTxs = await apiGet('/transactions?start_date='+histStart+'&end_date='+endStr).catch(()=>[]);
     const paymentAccountByCard = {};
     histTxs.filter(t=>t.paid_credit_card_id!=null).forEach(t=>{
       // Usa o lançamento mais recente para cada cartão como referência de conta
@@ -568,9 +570,9 @@ async function loadAllData() {
       state.creditCards.map(c =>
         apiGet('/credit_cards/'+c.id+'/invoices').then(invs => {
           // Fatura cujo vencimento (date) cai dentro do período selecionado
-          const inPeriod = invs.find(inv => inv.date >= fmt(start) && inv.date <= fmt(end));
+          const inPeriod = invs.find(inv => inv.date >= startStr && inv.date <= endStr);
           // Fallback: fatura mais recente com vencimento <= fim do período
-          const fallback = [...invs].filter(inv=>inv.date<=fmt(end))
+          const fallback = [...invs].filter(inv=>inv.date<=endStr)
             .sort((a,b)=>b.date.localeCompare(a.date))[0];
           const target = inPeriod || fallback;
           if (!target) return null;
