@@ -478,38 +478,33 @@ const fmt=d=>d.toISOString().split('T')[0];
    TRANSFERÊNCIAS
    A API do Organizze usa:
    - type === "Transference"  → identifica a transferência
-   - debitAccountUUID         → conta de origem (saída)
-   - creditAccountUUID        → conta de destino (entrada)
-   - accountUUID              → conta à qual este lançamento pertence
+   - oposite_transaction_id  → preenchido quando é transferência
+   - oposite_account_id      → ID da conta oposta
+   - amount_cents < 0        → saída (conta origem); > 0 → entrada (conta destino)
 ══════════════════════════════════════════ */
 function isTransfer(t) {
-  return t.type === 'Transference';
+  // A API REST v2 identifica transferências por oposite_transaction_id preenchido
+  return t.oposite_transaction_id != null;
 }
 
-// Retorna o UUID da conta de origem e destino de forma confiável
-function transferUUIDs(t) {
-  return {
-    originUUID : t.debitAccountUUID  || '',
-    destUUID   : t.creditAccountUUID || '',
-  };
+// Para um lançamento de transferência, retorna IDs de origem e destino
+function transferAccountIds(t) {
+  if (t.amount_cents < 0) {
+    // Saída: este lançamento é da conta origem
+    return { originId: String(t.account_id), destId: String(t.oposite_account_id) };
+  } else {
+    // Entrada: este lançamento é da conta destino
+    return { originId: String(t.oposite_account_id), destId: String(t.account_id) };
+  }
 }
 
-// Busca conta pelo UUID (a API retorna uuid nos lançamentos, id nos accounts)
-function accByUUID(uuid) {
-  return state.accounts.find(a => a.uuid === uuid || String(a.id) === uuid);
-}
-function accNameByUUID(uuid) {
-  const a = accByUUID(uuid);
-  return a ? a.name : uuid || '—';
-}
-
-// Uma transferência é INTERNA se ambas as contas (origem e destino)
-// estiverem dentro do conjunto de contas selecionadas no filtro.
-function isInternalTransfer(t, selectedUUIDs) {
+// Uma transferência é INTERNA se ambas as contas envolvidas
+// estiverem dentro do conjunto de contas selecionadas.
+function isInternalTransfer(t, selectedIds) {
   if (!isTransfer(t)) return false;
-  const { originUUID, destUUID } = transferUUIDs(t);
   if (state.selectedAccounts.has('all')) return true;
-  return selectedUUIDs.has(originUUID) && selectedUUIDs.has(destUUID);
+  const { originId, destId } = transferAccountIds(t);
+  return selectedIds.has(originId) && selectedIds.has(destId);
 }
 
 /* ══════════════════════════════════════════
@@ -550,33 +545,19 @@ async function loadAllData() {
 function applyFilters() {
   const cat = document.getElementById('filterCategory').value;
 
-  // Monta Set de UUIDs das contas selecionadas (para checar transferências internas)
-  const selectedUUIDs = state.selectedAccounts.has('all')
-    ? new Set(state.accounts.map(a => a.uuid || String(a.id)))
-    : new Set(
-        [...state.selectedAccounts].map(id => {
-          const acc = state.accounts.find(a => String(a.id) === id);
-          return acc ? (acc.uuid || String(acc.id)) : id;
-        })
-      );
-
-  // Monta Set de IDs numéricos para filtrar os lançamentos por conta
+  // Set de IDs (string) das contas selecionadas
   const selectedIds = state.selectedAccounts.has('all')
     ? new Set(state.accounts.map(a => String(a.id)))
     : new Set(state.selectedAccounts);
 
   let txs = [...state.transactions];
 
-  // 1. Filtro de conta — lançamentos pertencem à conta pelo campo account_id
-  //    Para transferências, filtramos pelo accountUUID (campo real da API)
+  // 1. Filtro de conta — usa account_id (campo real da API)
   if (!state.selectedAccounts.has('all')) {
-    txs = txs.filter(t => {
-      if (isTransfer(t)) return selectedUUIDs.has(t.accountUUID);
-      return selectedIds.has(String(t.account_id));
-    });
+    txs = txs.filter(t => selectedIds.has(String(t.account_id)));
   }
 
-  // 2. Filtro de categoria (ignora transferências — elas não têm categoria)
+  // 2. Filtro de categoria (transferências não têm categoria, não filtrar)
   if (cat !== 'all') {
     const catIds = state.categories
       .filter(c => String(c.id) === cat || String(c.parent_id) === cat)
@@ -584,8 +565,8 @@ function applyFilters() {
     txs = txs.filter(t => isTransfer(t) || catIds.includes(t.category_id));
   }
 
-  // 3. Remover transferências internas (ponto 4)
-  txs = txs.filter(t => !isInternalTransfer(t, selectedUUIDs));
+  // 3. Remover transferências internas (ambas as contas no conjunto selecionado)
+  txs = txs.filter(t => !isInternalTransfer(t, selectedIds));
 
   renderKPIs(txs);
   renderCharts(txs);
@@ -605,22 +586,21 @@ const accName = id => { const a=state.accounts.find(a=>a.id===id); return a?a.na
 ══════════════════════════════════════════ */
 function renderKPIs(txs) {
   const nonTransfer = txs.filter(t=>!isTransfer(t));
-  const val = t => t.amountInCents ?? t.amount_cents ?? 0;
-  const rec  = nonTransfer.filter(t=>val(t)>0).reduce((s,t)=>s+val(t),0);
-  const desp = nonTransfer.filter(t=>val(t)<0).reduce((s,t)=>s+val(t),0);
+  const rec  = nonTransfer.filter(t=>t.amount_cents>0).reduce((s,t)=>s+t.amount_cents,0);
+  const desp = nonTransfer.filter(t=>t.amount_cents<0).reduce((s,t)=>s+t.amount_cents,0);
   const sal  = rec+desp;
-  const maior= nonTransfer.filter(t=>val(t)<0).reduce((m,t)=>!m||val(t)<val(m)?t:m,null);
+  const maior= nonTransfer.filter(t=>t.amount_cents<0).reduce((m,t)=>!m||t.amount_cents<m.amount_cents?t:m,null);
 
   document.getElementById('kpiReceitas').textContent = money(rec);
   document.getElementById('kpiDespesas').textContent = money(Math.abs(desp));
   document.getElementById('kpiSaldo').textContent    = money(sal);
   document.getElementById('kpiSaldo').className      = 'kpi-value '+(sal>=0?'positive':'negative');
   if(maior){
-    document.getElementById('kpiMaiorDespesa').textContent  = money(Math.abs(val(maior)));
-    document.getElementById('kpiMaiorDespesaCat').innerHTML = `<span class="tag">${catName(maior.categoryId??maior.category_id)}</span> ${maior.description}`;
+    document.getElementById('kpiMaiorDespesa').textContent  = money(Math.abs(maior.amount_cents));
+    document.getElementById('kpiMaiorDespesaCat').innerHTML = `<span class="tag">${catName(maior.category_id)}</span> ${maior.description}`;
   }
-  document.getElementById('kpiReceitasDelta').innerHTML = `<span class="tag green">${nonTransfer.filter(t=>val(t)>0).length} lançamentos</span>`;
-  document.getElementById('kpiDespesasDelta').innerHTML = `<span class="tag red">${nonTransfer.filter(t=>val(t)<0).length} lançamentos</span>`;
+  document.getElementById('kpiReceitasDelta').innerHTML = `<span class="tag green">${nonTransfer.filter(t=>t.amount_cents>0).length} lançamentos</span>`;
+  document.getElementById('kpiDespesasDelta').innerHTML = `<span class="tag red">${nonTransfer.filter(t=>t.amount_cents<0).length} lançamentos</span>`;
   document.getElementById('kpiSaldoDelta').innerHTML    = sal>=0?'<span class="up">▲ Positivo no período</span>':'<span class="down">▼ Negativo no período</span>';
 }
 
@@ -637,10 +617,9 @@ function renderEvolucao(txs) {
   const isMes = state.mode==='month';
   const byKey={};
   nonTransfer.forEach(t=>{
-    const v = t.amountInCents ?? t.amount_cents ?? 0;
     const key=isMes?t.date:t.date.substring(0,7);
     if(!byKey[key])byKey[key]={r:0,d:0};
-    if(v>0)byKey[key].r+=v; else byKey[key].d+=Math.abs(v);
+    if(t.amount_cents>0)byKey[key].r+=t.amount_cents; else byKey[key].d+=Math.abs(t.amount_cents);
   });
   const labels=Object.keys(byKey).sort();
   const lFmt=isMes
@@ -663,10 +642,9 @@ function renderEvolucao(txs) {
 function renderCategorias(txs) {
   const nonTransfer=txs.filter(t=>!isTransfer(t));
   const byCat={};
-  nonTransfer.filter(t=>(t.amountInCents??t.amount_cents??0)<0).forEach(t=>{
-    const n=catName(t.categoryId??t.category_id);
-    const v=Math.abs(t.amountInCents??t.amount_cents??0);
-    byCat[n]=(byCat[n]||0)+v;
+  nonTransfer.filter(t=>t.amount_cents<0).forEach(t=>{
+    const n=catName(t.category_id);
+    byCat[n]=(byCat[n]||0)+Math.abs(t.amount_cents);
   });
   const sorted=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,8);
   if(cCat)cCat.destroy();
@@ -682,11 +660,7 @@ function renderTendencia(txs) {
   const nonTransfer=txs.filter(t=>!isTransfer(t));
   const sorted=[...nonTransfer].sort((a,b)=>a.date.localeCompare(b.date));
   let acc=0;
-  const pts=sorted.map(t=>{
-    const v=t.amountInCents??t.amount_cents??0;
-    acc+=v;
-    return{x:t.date,y:(acc/100).toFixed(2)};
-  });
+  const pts=sorted.map(t=>{acc+=t.amount_cents;return{x:t.date,y:(acc/100).toFixed(2)};});
   const labels=pts.map(p=>new Date(p.x+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));
   if(cTend)cTend.destroy();
   cTend=new Chart(document.getElementById('chartTendencia'),{type:'line',
@@ -724,9 +698,9 @@ function renderTransactions(txs) {
     const dt=new Date(t.date+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'});
 
     if(isTransfer(t)){
-      const { originUUID, destUUID } = transferUUIDs(t);
-      const originName = accNameByUUID(originUUID);
-      const destName   = accNameByUUID(destUUID);
+      const { originId, destId } = transferAccountIds(t);
+      const originName = accName(originId);
+      const destName   = accName(destId);
       return`<tr>
         <td style="color:var(--text-secondary);">${dt}</td>
         <td>
@@ -736,20 +710,18 @@ function renderTransactions(txs) {
         <td>—</td>
         <td>${originName}</td>
         <td><span class="tag purple">Transferência</span></td>
-        <td class="tx-amount transfer">${money(Math.abs(t.amountInCents||t.amount_cents||0))}</td>
+        <td class="tx-amount transfer">${money(Math.abs(t.amount_cents))}</td>
       </tr>`;
     }
 
-    const val = t.amountInCents ?? t.amount_cents ?? 0;
-    const isPos = val > 0;
-    const accId = t.account_id ?? (accByUUID(t.accountUUID)?.id);
+    const isPos=t.amount_cents>0;
     return`<tr>
       <td style="color:var(--text-secondary);">${dt}</td>
       <td>${t.description||'—'}</td>
-      <td>${catName(t.categoryId ?? t.category_id)}</td>
-      <td>${accName(accId)}</td>
+      <td>${catName(t.category_id)}</td>
+      <td>${accName(t.account_id)}</td>
       <td><span class="tag ${isPos?'green':'red'}">${isPos?'Receita':'Despesa'}</span></td>
-      <td class="tx-amount ${isPos?'positive':'negative'}">${money(Math.abs(val))}</td>
+      <td class="tx-amount ${isPos?'positive':'negative'}">${money(Math.abs(t.amount_cents))}</td>
     </tr>`;
   }).join('');
 
