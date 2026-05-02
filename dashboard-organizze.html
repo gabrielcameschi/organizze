@@ -551,17 +551,39 @@ async function loadAllData() {
     state.transactions=transactions; state.budgets=budgets;
     state.creditCards=creditCards.filter(c=>!c.archived);
 
-    // Buscar fatura atual de cada cartão ativo em paralelo
+    // Buscar conta de pagamento de cada cartão consultando histórico de 12 meses
+    const histStart = fmt(new Date(start.slice(0,4), +start.slice(5,7)-13, 1));
+    const histTxs = await apiGet('/transactions?start_date='+histStart+'&end_date='+fmt(end)).catch(()=>[]);
+    const paymentAccountByCard = {};
+    histTxs.filter(t=>t.paid_credit_card_id!=null).forEach(t=>{
+      // Usa o lançamento mais recente para cada cartão como referência de conta
+      if (!paymentAccountByCard[t.paid_credit_card_id] ||
+          t.date > paymentAccountByCard[t.paid_credit_card_id].date) {
+        paymentAccountByCard[t.paid_credit_card_id] = { account_id: t.account_id, date: t.date };
+      }
+    });
+
+    // Buscar faturas de cada cartão ativo e identificar a do período selecionado
     const invoiceResults = await Promise.all(
       state.creditCards.map(c =>
         apiGet('/credit_cards/'+c.id+'/invoices').then(invs => {
-          // Encontrar a fatura do período atual (vencimento mais próximo de hoje ou futuro)
-          const today = new Date().toISOString().split('T')[0];
-          const sorted = [...invs].sort((a,b)=>a.date.localeCompare(b.date));
-          // Pega a fatura cuja data de fechamento já passou (fatura fechada atual ou mais recente)
-          // ou a aberta (ainda não fechou)
-          const current = sorted.find(inv => inv.date >= today) || sorted[sorted.length-1];
-          return current ? { ...current, cardName: c.name, dueDay: c.due_day, closingDay: c.closing_day } : null;
+          // Fatura cujo vencimento (date) cai dentro do período selecionado
+          const inPeriod = invs.find(inv => inv.date >= fmt(start) && inv.date <= fmt(end));
+          // Fallback: fatura mais recente com vencimento <= fim do período
+          const fallback = [...invs].filter(inv=>inv.date<=fmt(end))
+            .sort((a,b)=>b.date.localeCompare(a.date))[0];
+          const target = inPeriod || fallback;
+          if (!target) return null;
+          const payAccId = (paymentAccountByCard[c.id]||{}).account_id || null;
+          return {
+            ...target,
+            cardName      : c.name,
+            cardId        : c.id,
+            dueDay        : c.due_day,
+            closingDay    : c.closing_day,
+            payAccountId  : payAccId,  // conta que paga esta fatura
+            isInPeriod    : !!inPeriod // se o vencimento cai no período selecionado
+          };
         }).catch(()=>null)
       )
     );
@@ -596,21 +618,16 @@ function applyFilters() {
   let txs = [...state.transactions];
 
   // 1. Filtro de conta
-  // Para lançamentos normais: filtra por account_id.
-  // Para transferências: mantém se ao menos UMA das contas está no conjunto selecionado
-  // (a outra pode ser externa — e deve aparecer na tabela).
-  // A remoção de transferências internas (ambas as contas no conjunto) é feita no passo 3.
   if (!state.selectedAccounts.has('all')) {
     txs = txs.filter(t => {
       if (!isTransfer(t)) return selectedIds.has(String(t.account_id));
-      // Transferência: manter se ao menos uma conta está no conjunto
       const thisId  = String(t.account_id);
       const otherId = String(t.oposite_account_id);
       return selectedIds.has(thisId) || selectedIds.has(otherId);
     });
   }
 
-  // 2. Filtro de categoria (transferências não têm categoria, não filtrar)
+  // 2. Filtro de categoria
   if (cat !== 'all') {
     const catIds = state.categories
       .filter(c => String(c.id) === cat || String(c.parent_id) === cat)
@@ -618,12 +635,46 @@ function applyFilters() {
     txs = txs.filter(t => isTransfer(t) || catIds.includes(t.category_id));
   }
 
-  // 3. Remover transferências internas (ambas as contas no conjunto selecionado)
+  // 3. Remover transferências internas
   txs = txs.filter(t => !isInternalTransfer(t, selectedIds));
 
-  renderKPIs(txs);
-  renderCharts(txs);
-  renderTransactions(txs);
+  // 4. Faturas com vencimento no período — adicionar como despesa virtual na conta pagadora
+  //    Evitar dupla contagem: se já existe pagamento real (paid_credit_card_id) nas transações,
+  //    não somar novamente.
+  const paidCardIds = new Set(
+    state.transactions.filter(t=>t.paid_credit_card_id!=null).map(t=>String(t.paid_credit_card_id))
+  );
+
+  const invoiceVirtual = state.invoices
+    .filter(inv => {
+      if (!inv.isInPeriod) return false;                          // só faturas do período
+      if (paidCardIds.has(String(inv.cardId))) return false;      // já paga no período = já contabilizada
+      if (!inv.payAccountId) return false;                        // sem conta de pagamento conhecida
+      if (!state.selectedAccounts.has('all') &&
+          !selectedIds.has(String(inv.payAccountId))) return false; // conta pagadora fora do filtro
+      return true;
+    })
+    .map(inv => ({
+      _isInvoice     : true,          // marcador para identificar na tabela
+      id             : 'inv_'+inv.id,
+      description    : 'Fatura '+inv.cardName,
+      date           : inv.date,      // data de vencimento
+      amount_cents   : inv.amount_cents, // negativo = despesa
+      account_id     : inv.payAccountId,
+      category_id    : null,
+      oposite_transaction_id: null,
+      cardName       : inv.cardName,
+      closing_date   : inv.closing_date,
+    }));
+
+  state.invoiceVirtual = invoiceVirtual;
+
+  // txs para KPIs e gráficos incluem as faturas virtuais
+  const txsWithInvoices = [...txs, ...invoiceVirtual];
+
+  renderKPIs(txsWithInvoices);
+  renderCharts(txsWithInvoices);
+  renderTransactions(txs); // tabela mostra apenas lançamentos reais (faturas ficam no painel próprio)
 }
 
 /* ══════════════════════════════════════════
@@ -638,16 +689,16 @@ const accName = id => { const a=state.accounts.find(a=>String(a.id)===String(id)
    KPIs
 ══════════════════════════════════════════ */
 function effectiveAmount(t) {
+  // Lançamentos virtuais de fatura já têm o sinal correto (negativo = despesa)
+  if (t._isInvoice) return t.amount_cents;
   // Para lançamentos normais, amount_cents já tem o sinal correto.
-  // Para transferências externas, precisamos verificar se o sinal está correto
-  // em relação ao conjunto de contas selecionadas.
   if (!isTransfer(t)) return t.amount_cents;
+  // Para transferências externas, verificar sinal em relação ao conjunto selecionado
   const selectedIds = state.selectedAccounts.has('all')
     ? new Set(state.accounts.map(a=>String(a.id)))
     : new Set(state.selectedAccounts);
   const thisInSet  = selectedIds.has(String(t.account_id));
   const otherInSet = selectedIds.has(String(t.oposite_account_id));
-  // Se only other está no conjunto, inverter o sinal
   if (!thisInSet && otherInSet) return -t.amount_cents;
   return t.amount_cents;
 }
@@ -656,7 +707,8 @@ function renderKPIs(txs) {
   const rec  = txs.filter(t=>effectiveAmount(t)>0).reduce((s,t)=>s+effectiveAmount(t),0);
   const desp = txs.filter(t=>effectiveAmount(t)<0).reduce((s,t)=>s+effectiveAmount(t),0);
   const sal  = rec+desp;
-  const nonTransfer = txs.filter(t=>!isTransfer(t));
+  // Maior despesa: apenas lançamentos reais (não faturas virtuais, não transferências)
+  const nonTransfer = txs.filter(t=>!isTransfer(t)&&!t._isInvoice);
   const maior= nonTransfer.filter(t=>t.amount_cents<0).reduce((m,t)=>!m||t.amount_cents<m.amount_cents?t:m,null);
 
   document.getElementById('kpiReceitas').textContent = money(rec);
@@ -786,6 +838,12 @@ function renderInvoices() {
     const isClosing   = !isPaid && !isOpen && closeDate > today; // fatura ainda aberta (acumulando)
     const daysUntilDue = Math.round((dueDate - today) / (1000*60*60*24));
 
+    // Verificar se esta fatura está sendo computada nos KPIs
+    const paidCardIds = new Set(
+      state.transactions.filter(t=>t.paid_credit_card_id!=null).map(t=>String(t.paid_credit_card_id))
+    );
+    const isComputedInKPI = inv.isInPeriod && !paidCardIds.has(String(inv.cardId)) && inv.payAccountId;
+
     let statusCls, statusTxt;
     if (isPaid) {
       statusCls = 'paid'; statusTxt = 'Paga';
@@ -809,6 +867,8 @@ function renderInvoices() {
         <div class="invoice-meta">
           <span>Fechamento: ${closeDate.toLocaleDateString('pt-BR')}</span>
           <span>Vencimento: ${dueDate.toLocaleDateString('pt-BR')}</span>
+          ${inv.payAccountId ? '<span>Conta: '+accName(inv.payAccountId)+'</span>' : ''}
+          ${isComputedInKPI ? '<span style="margin-top:4px;color:var(--green);font-weight:500;">✓ Computada nas despesas do período</span>' : ''}
         </div>
       </div>`;
   }).join('');
