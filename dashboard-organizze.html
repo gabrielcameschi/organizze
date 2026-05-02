@@ -640,6 +640,11 @@ function applyFilters() {
   // 3. Remover transferências internas
   txs = txs.filter(t => !isInternalTransfer(t, selectedIds));
 
+  // 3b. Remover lançamentos de compras no cartão de crédito
+  //     Esses lançamentos têm credit_card_id preenchido e já estão consolidados
+  //     na fatura do cartão — somá-los novamente causaria dupla contagem.
+  txs = txs.filter(t => t.credit_card_id == null);
+
   // 4. Deduplicar transferências externas: a API retorna dois lançamentos para cada
   //    transferência (um em cada conta). Quando ambos passam pelo filtro (ex: todas as contas),
   //    manter apenas um — preferencialmente o de SAÍDA (amount_cents < 0), pois ele tem
