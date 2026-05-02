@@ -637,11 +637,24 @@ const accName = id => { const a=state.accounts.find(a=>String(a.id)===String(id)
 /* ══════════════════════════════════════════
    KPIs
 ══════════════════════════════════════════ */
+function effectiveAmount(t) {
+  // Para lançamentos normais, amount_cents já tem o sinal correto.
+  // Para transferências externas, precisamos verificar se o sinal está correto
+  // em relação ao conjunto de contas selecionadas.
+  if (!isTransfer(t)) return t.amount_cents;
+  const selectedIds = state.selectedAccounts.has('all')
+    ? new Set(state.accounts.map(a=>String(a.id)))
+    : new Set(state.selectedAccounts);
+  const thisInSet  = selectedIds.has(String(t.account_id));
+  const otherInSet = selectedIds.has(String(t.oposite_account_id));
+  // Se only other está no conjunto, inverter o sinal
+  if (!thisInSet && otherInSet) return -t.amount_cents;
+  return t.amount_cents;
+}
+
 function renderKPIs(txs) {
-  // Transferências externas entram nos cálculos (são receita ou despesa real para as contas selecionadas)
-  // Transferências internas já foram removidas em applyFilters
-  const rec  = txs.filter(t=>t.amount_cents>0).reduce((s,t)=>s+t.amount_cents,0);
-  const desp = txs.filter(t=>t.amount_cents<0).reduce((s,t)=>s+t.amount_cents,0);
+  const rec  = txs.filter(t=>effectiveAmount(t)>0).reduce((s,t)=>s+effectiveAmount(t),0);
+  const desp = txs.filter(t=>effectiveAmount(t)<0).reduce((s,t)=>s+effectiveAmount(t),0);
   const sal  = rec+desp;
   const nonTransfer = txs.filter(t=>!isTransfer(t));
   const maior= nonTransfer.filter(t=>t.amount_cents<0).reduce((m,t)=>!m||t.amount_cents<m.amount_cents?t:m,null);
@@ -654,8 +667,8 @@ function renderKPIs(txs) {
     document.getElementById('kpiMaiorDespesa').textContent  = money(Math.abs(maior.amount_cents));
     document.getElementById('kpiMaiorDespesaCat').innerHTML = `<span class="tag">${catName(maior.category_id)}</span> ${maior.description}`;
   }
-  document.getElementById('kpiReceitasDelta').innerHTML = `<span class="tag green">${txs.filter(t=>t.amount_cents>0).length} lançamentos</span>`;
-  document.getElementById('kpiDespesasDelta').innerHTML = `<span class="tag red">${txs.filter(t=>t.amount_cents<0).length} lançamentos</span>`;
+  document.getElementById('kpiReceitasDelta').innerHTML = `<span class="tag green">${txs.filter(t=>effectiveAmount(t)>0).length} lançamentos</span>`;
+  document.getElementById('kpiDespesasDelta').innerHTML = `<span class="tag red">${txs.filter(t=>effectiveAmount(t)<0).length} lançamentos</span>`;
   document.getElementById('kpiSaldoDelta').innerHTML    = sal>=0?'<span class="up">▲ Positivo no período</span>':'<span class="down">▼ Negativo no período</span>';
 }
 
@@ -672,9 +685,10 @@ function renderEvolucao(txs) {
   const isMes = state.mode==='month';
   const byKey={};
   txs.forEach(t=>{
+    const v=effectiveAmount(t);
     const key=isMes?t.date:t.date.substring(0,7);
     if(!byKey[key])byKey[key]={r:0,d:0};
-    if(t.amount_cents>0)byKey[key].r+=t.amount_cents; else byKey[key].d+=Math.abs(t.amount_cents);
+    if(v>0)byKey[key].r+=v; else byKey[key].d+=Math.abs(v);
   });
   const labels=Object.keys(byKey).sort();
   const lFmt=isMes
@@ -715,7 +729,7 @@ function renderTendencia(txs) {
   // Saldo acumulado inclui transferências externas
   const sorted=[...txs].sort((a,b)=>a.date.localeCompare(b.date));
   let acc=0;
-  const pts=sorted.map(t=>{acc+=t.amount_cents;return{x:t.date,y:(acc/100).toFixed(2)};});
+  const pts=sorted.map(t=>{acc+=effectiveAmount(t);return{x:t.date,y:(acc/100).toFixed(2)};});
   const labels=pts.map(p=>new Date(p.x+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));
   if(cTend)cTend.destroy();
   cTend=new Chart(document.getElementById('chartTendencia'),{type:'line',
@@ -816,13 +830,42 @@ function renderTransactions(txs) {
     if(isTransfer(t)){
       const thisAccName  = accName(t.account_id);
       const otherAccName = accName(t.oposite_account_id);
-      const isOut        = t.amount_cents < 0;
-      const originName   = isOut ? thisAccName  : otherAccName;
-      const destName     = isOut ? otherAccName : thisAccName;
-      // Cor e label conforme direção do fluxo para as contas selecionadas
-      const tagCls  = isOut ? 'red'      : 'green';
-      const tagTxt  = isOut ? 'Transf. Saída' : 'Transf. Entrada';
-      const valCls  = isOut ? 'negative' : 'positive';
+
+      // Determinar origem e destino reais com base no sinal de amount_cents:
+      // amount_cents < 0 = saída da conta deste lançamento (ela é a origem)
+      // amount_cents > 0 = entrada na conta deste lançamento (ela é o destino)
+      const thisIsOrigin = t.amount_cents < 0;
+      const originName   = thisIsOrigin ? thisAccName  : otherAccName;
+      const destName     = thisIsOrigin ? otherAccName : thisAccName;
+
+      // A direção relevante para o conjunto de contas selecionadas:
+      // Se a conta deste lançamento (account_id) está no conjunto selecionado,
+      // o sinal de amount_cents já indica corretamente entrada/saída para o conjunto.
+      // Se apenas a conta oposta está no conjunto (oposite_account_id),
+      // o sinal é invertido em relação ao conjunto.
+      const selectedIds = state.selectedAccounts.has('all')
+        ? new Set(state.accounts.map(a=>String(a.id)))
+        : new Set(state.selectedAccounts);
+      const thisInSet  = selectedIds.has(String(t.account_id));
+      const otherInSet = selectedIds.has(String(t.oposite_account_id));
+
+      // Se ambas estão no conjunto → transferência interna (não deveria aparecer)
+      // Se só this está → sinal de amount_cents é o correto para o conjunto
+      // Se só other está → sinal invertido em relação ao conjunto
+      let isOutForSet;
+      if (thisInSet && !otherInSet) {
+        isOutForSet = t.amount_cents < 0; // saiu do conjunto
+      } else if (!thisInSet && otherInSet) {
+        isOutForSet = t.amount_cents > 0; // entrou no conjunto pelo lado oposto (sinal invertido)
+      } else {
+        isOutForSet = t.amount_cents < 0; // fallback (todas as contas)
+      }
+
+      const tagCls = isOutForSet ? 'red'   : 'green';
+      const tagTxt = isOutForSet ? 'Transf. Saída' : 'Transf. Entrada';
+      const valCls = isOutForSet ? 'negative' : 'positive';
+      const prefix = isOutForSet ? '−' : '+';
+
       return`<tr>
         <td style="color:var(--text-secondary);">${dt}</td>
         <td>
@@ -832,7 +875,7 @@ function renderTransactions(txs) {
         <td>—</td>
         <td>${thisAccName}</td>
         <td><span class="tag ${tagCls}">${tagTxt}</span></td>
-        <td class="tx-amount ${valCls}">${isOut ? '−' : '+'}${money(Math.abs(t.amount_cents))}</td>
+        <td class="tx-amount ${valCls}">${prefix}${money(Math.abs(t.amount_cents))}</td>
       </tr>`;
     }
 
