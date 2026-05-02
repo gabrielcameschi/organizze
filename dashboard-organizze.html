@@ -34,14 +34,27 @@
   .btn-refresh:disabled{opacity:0.5;cursor:not-allowed;}
   .config-link{font-size:0.75rem;color:var(--blue);cursor:pointer;background:none;border:none;text-decoration:underline;padding:0;font-family:'DM Sans',sans-serif;}
   .container{max-width:1280px;margin:0 auto;padding:2rem;}
+
+  /* ── Barra de período ── */
+  .period-bar{display:flex;align-items:center;gap:8px;margin-bottom:2rem;flex-wrap:wrap;}
+  .period-nav{display:flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+  .nav-btn{font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;color:var(--text-secondary);background:transparent;border:none;padding:6px 14px;cursor:pointer;transition:all .15s;line-height:1;}
+  .nav-btn:hover{background:var(--surface2);color:var(--text-primary);}
+  .period-label{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--text-primary);padding:6px 16px;min-width:180px;text-align:center;border-left:1px solid var(--border);border-right:1px solid var(--border);}
+  .period-modes{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;gap:2px;margin-left:auto;}
+  .mode-btn{font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:500;color:var(--text-secondary);background:transparent;border:none;border-radius:6px;padding:5px 14px;cursor:pointer;transition:all .15s;}
+  .mode-btn.active{background:var(--text-primary);color:var(--bg);}
+  .today-btn{font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:500;color:var(--text-secondary);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 14px;cursor:pointer;transition:all .15s;}
+  .today-btn:hover{background:var(--surface2);}
+
+  /* ── Filtros ── */
   .filters-bar{display:flex;align-items:center;gap:12px;margin-bottom:2rem;flex-wrap:wrap;}
   .filter-group{display:flex;align-items:center;gap:8px;}
   .filter-label{font-size:0.75rem;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;}
   select{font-family:'DM Sans',sans-serif;font-size:0.85rem;color:var(--text-primary);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 28px 7px 12px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;min-width:160px;}
   select:focus{border-color:var(--text-secondary);}
-  .period-tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;gap:2px;margin-left:auto;}
-  .tab-btn{font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:500;color:var(--text-secondary);background:transparent;border:none;border-radius:6px;padding:5px 14px;cursor:pointer;transition:all .15s;}
-  .tab-btn.active{background:var(--text-primary);color:var(--bg);}
+
+  /* ── KPIs ── */
   .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;}
   .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;position:relative;overflow:hidden;}
   .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
@@ -56,6 +69,8 @@
   .kpi-delta{margin-top:.4rem;font-size:.75rem;color:var(--text-hint);}
   .kpi-delta .up{color:var(--green);font-weight:500;}
   .kpi-delta .down{color:var(--red);font-weight:500;}
+
+  /* ── Gráficos ── */
   .charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;margin-bottom:1.25rem;}
   @media(max-width:900px){.charts-grid{grid-template-columns:1fr;}}
   .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;}
@@ -63,6 +78,8 @@
   .chart-wrap{position:relative;width:100%;}
   .trend-row{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;}
   @media(max-width:900px){.trend-row{grid-template-columns:1fr;}}
+
+  /* ── Tabela ── */
   .transactions-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.25rem;}
   .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
   .tx-table{width:100%;border-collapse:collapse;}
@@ -77,6 +94,8 @@
   .tag{display:inline-block;font-size:.7rem;font-weight:500;padding:2px 9px;border-radius:20px;color:var(--text-secondary);background:var(--surface2);border:1px solid var(--border);}
   .tag.green{background:var(--green-bg);color:var(--green);border-color:transparent;}
   .tag.red{background:var(--red-bg);color:var(--red);border-color:transparent;}
+
+  /* ── Orçamentos ── */
   .budget-list{display:flex;flex-direction:column;gap:1rem;}
   .budget-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
   .budget-name{font-size:.85rem;color:var(--text-primary);font-weight:500;}
@@ -86,10 +105,13 @@
   .progress-fill.ok{background:var(--green);}
   .progress-fill.warn{background:var(--amber);}
   .progress-fill.over{background:var(--red);}
+
   .state-overlay{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;gap:1rem;color:var(--text-secondary);font-size:.85rem;text-align:center;}
   .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--text-secondary);border-radius:50%;animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
-  /* Modal */
+  .err-bar{display:none;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:var(--radius-sm);padding:12px 16px;font-size:.82rem;line-height:1.6;margin-bottom:1.5rem;}
+
+  /* ── Modal ── */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:200;}
   .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;width:520px;max-width:95vw;max-height:92vh;overflow-y:auto;}
   .modal h2{font-family:'DM Serif Display',serif;font-size:1.5rem;margin-bottom:.25rem;}
@@ -102,42 +124,31 @@
   .form-hint{margin-top:5px;font-size:.75rem;color:var(--text-hint);}
   .btn-primary{font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:600;background:var(--text-primary);color:var(--bg);border:none;border-radius:var(--radius-sm);padding:10px 20px;cursor:pointer;width:100%;transition:opacity .15s;margin-top:.5rem;}
   .btn-primary:hover{opacity:.85;}
-  .alert{font-size:.8rem;padding:10px 14px;border-radius:var(--radius-sm);margin-bottom:1rem;line-height:1.5;}
+  .alert{font-size:.8rem;padding:10px 14px;border-radius:var(--radius-sm);margin-bottom:1rem;}
   .alert.error{background:var(--red-bg);color:var(--red);}
   .alert.success{background:var(--green-bg);color:var(--green);}
-  /* Badge de segurança */
   .security-badge{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:500;color:var(--green);background:var(--green-bg);border-radius:20px;padding:3px 10px;margin-bottom:1rem;}
-  .lock-icon{width:10px;height:10px;border:1.5px solid currentColor;border-radius:2px;position:relative;}
-  .lock-icon::before{content:'';position:absolute;top:-5px;left:1px;width:6px;height:5px;border:1.5px solid currentColor;border-bottom:none;border-radius:3px 3px 0 0;}
-  .err-bar{display:none;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:var(--radius-sm);padding:12px 16px;font-size:.82rem;line-height:1.6;margin-bottom:1.5rem;}
 </style>
 </head>
 <body>
 
-<!-- Modal de configuração -->
+<!-- Modal -->
 <div class="modal-backdrop" id="configModal">
   <div class="modal">
     <h2>Configurar Conexão</h2>
     <p class="modal-sub">Configure o acesso ao proxy e ao Organizze. Todas as informações ficam salvas apenas neste navegador.</p>
-
-    <div class="security-badge"><span class="lock-icon"></span> Conexão protegida por chave secreta</div>
-
+    <div class="security-badge">🔒 Conexão protegida por chave secreta</div>
     <div id="configAlert"></div>
-
-    <!-- Seção 1: Proxy -->
     <div class="form-section">Proxy</div>
     <div class="form-field">
       <label>URL do Proxy</label>
       <input type="url" id="inputProxy" placeholder="https://seu-proxy.onrender.com">
-      <div class="form-hint">Para uso local: <code style="font-family:monospace;font-size:.85em;">https://organizze.onrender.com</code></div>
+      <div class="form-hint">Para uso local: <code style="font-family:monospace;font-size:.85em;">http://localhost:3131</code></div>
     </div>
     <div class="form-field">
       <label>Chave Secreta (DASHBOARD_SECRET)</label>
       <input type="password" id="inputSecret" placeholder="A mesma chave definida no proxy">
-      <div class="form-hint">Qualquer pessoa sem esta chave receberá erro 401.</div>
     </div>
-
-    <!-- Seção 2: Organizze -->
     <div class="form-section">Organizze</div>
     <div class="form-field">
       <label>E-mail da conta</label>
@@ -148,7 +159,6 @@
       <input type="password" id="inputToken" placeholder="Seu token de acesso">
       <div class="form-hint">Obtenha em: <a href="https://app.organizze.com.br/configuracoes/api-keys" target="_blank" style="color:var(--blue);">Configurações → API Keys</a></div>
     </div>
-
     <button class="btn-primary" onclick="saveCredentials()">Salvar e Conectar</button>
   </div>
 </div>
@@ -166,18 +176,30 @@
 <main class="container" id="mainContent" style="display:none;">
   <div class="err-bar" id="errBar"></div>
 
+  <!-- Navegação de período -->
+  <div class="period-bar">
+    <div class="period-nav">
+      <button class="nav-btn" onclick="navigate(-1)">&#8592;</button>
+      <div class="period-label" id="periodLabel">—</div>
+      <button class="nav-btn" onclick="navigate(1)">&#8594;</button>
+    </div>
+    <button class="today-btn" onclick="goToToday()">Hoje</button>
+    <div class="period-modes">
+      <button class="mode-btn active" id="modeMonth" onclick="setMode('month',this)">Mês</button>
+      <button class="mode-btn" id="modeQuarter" onclick="setMode('quarter',this)">Trimestre</button>
+      <button class="mode-btn" id="modeYear" onclick="setMode('year',this)">Ano</button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
   <div class="filters-bar">
     <div class="filter-group"><span class="filter-label">Conta</span>
       <select id="filterAccount" onchange="applyFilters()"><option value="all">Todas as contas</option></select></div>
     <div class="filter-group"><span class="filter-label">Categoria</span>
       <select id="filterCategory" onchange="applyFilters()"><option value="all">Todas as categorias</option></select></div>
-    <div class="period-tabs">
-      <button class="tab-btn active" onclick="setPeriod('month',this)">Mês</button>
-      <button class="tab-btn" onclick="setPeriod('quarter',this)">Trim.</button>
-      <button class="tab-btn" onclick="setPeriod('year',this)">Ano</button>
-    </div>
   </div>
 
+  <!-- KPIs -->
   <div class="kpi-grid">
     <div class="kpi-card green"><div class="kpi-label">Receitas</div><div class="kpi-value positive" id="kpiReceitas">—</div><div class="kpi-delta" id="kpiReceitasDelta"></div></div>
     <div class="kpi-card red"><div class="kpi-label">Despesas</div><div class="kpi-value negative" id="kpiDespesas">—</div><div class="kpi-delta" id="kpiDespesasDelta"></div></div>
@@ -185,10 +207,11 @@
     <div class="kpi-card amber"><div class="kpi-label">Maior Despesa</div><div class="kpi-value" id="kpiMaiorDespesa" style="font-size:1.4rem;">—</div><div class="kpi-delta" id="kpiMaiorDespesaCat"></div></div>
   </div>
 
+  <!-- Gráficos -->
   <div class="charts-grid">
     <div class="chart-card">
-      <div class="chart-title">Receitas × Despesas — Evolução Mensal</div>
-      <div class="chart-wrap" style="height:260px;"><canvas id="chartEvolucao" role="img" aria-label="Evolução mensal"></canvas></div>
+      <div class="chart-title" id="chartEvolucaoTitle">Evolução no Período</div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="chartEvolucao" role="img" aria-label="Evolução do período"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">Despesas por Categoria</div>
@@ -198,18 +221,19 @@
 
   <div class="trend-row">
     <div class="chart-card">
-      <div class="section-header"><div class="chart-title" style="margin:0;">Orçamentos do Mês</div></div>
+      <div class="section-header"><div class="chart-title" style="margin:0;">Orçamentos</div></div>
       <div class="budget-list" id="budgetList"><div class="state-overlay"><div class="spinner"></div></div></div>
     </div>
     <div class="chart-card">
-      <div class="chart-title">Tendência — Saldo Acumulado</div>
+      <div class="chart-title">Saldo Acumulado no Período</div>
       <div class="chart-wrap" style="height:220px;"><canvas id="chartTendencia" role="img" aria-label="Saldo acumulado"></canvas></div>
     </div>
   </div>
 
+  <!-- Transações -->
   <div class="transactions-card">
     <div class="section-header">
-      <div class="chart-title" style="margin:0;">Últimas Transações</div>
+      <div class="chart-title" style="margin:0;">Transações</div>
       <span id="txCount" style="font-size:.75rem;color:var(--text-hint);"></span>
     </div>
     <div id="txContainer"><div class="state-overlay"><div class="spinner"></div></div></div>
@@ -217,7 +241,7 @@
 </main>
 
 <script>
-/* ── Credenciais ── */
+/* ── Config ── */
 const getConfig = () => ({
   proxy  : localStorage.getItem('org_proxy')  || '',
   secret : localStorage.getItem('org_secret') || '',
@@ -226,256 +250,287 @@ const getConfig = () => ({
 });
 
 function saveCredentials() {
-  const proxy  = document.getElementById('inputProxy').value.trim().replace(/\/$/, '');
+  const proxy  = document.getElementById('inputProxy').value.trim().replace(/\/$/,'');
   const secret = document.getElementById('inputSecret').value.trim();
   const email  = document.getElementById('inputEmail').value.trim();
   const token  = document.getElementById('inputToken').value.trim();
-  const alertEl = document.getElementById('configAlert');
-
-  if (!proxy || !secret || !email || !token) {
-    alertEl.innerHTML = '<div class="alert error">Preencha todos os campos antes de continuar.</div>';
-    return;
-  }
-  localStorage.setItem('org_proxy',  proxy);
-  localStorage.setItem('org_secret', secret);
-  localStorage.setItem('org_email',  email);
-  localStorage.setItem('org_token',  token);
-  alertEl.innerHTML = '<div class="alert success">Configuração salva! Conectando...</div>';
-  setTimeout(() => {
-    document.getElementById('configModal').style.display = 'none';
-    document.getElementById('mainContent').style.display = 'block';
-    document.getElementById('btnRefresh').disabled = false;
-    loadAllData();
-  }, 700);
+  const al = document.getElementById('configAlert');
+  if (!proxy||!secret||!email||!token) { al.innerHTML='<div class="alert error">Preencha todos os campos.</div>'; return; }
+  localStorage.setItem('org_proxy',proxy); localStorage.setItem('org_secret',secret);
+  localStorage.setItem('org_email',email); localStorage.setItem('org_token',token);
+  al.innerHTML='<div class="alert success">Configuração salva! Conectando...</div>';
+  setTimeout(()=>{ document.getElementById('configModal').style.display='none'; document.getElementById('mainContent').style.display='block'; document.getElementById('btnRefresh').disabled=false; loadAllData(); },700);
 }
 
 function showConfig() {
-  const c = getConfig();
-  document.getElementById('inputProxy').value  = c.proxy;
-  document.getElementById('inputSecret').value = c.secret;
-  document.getElementById('inputEmail').value  = c.email;
-  document.getElementById('inputToken').value  = c.token;
-  document.getElementById('configAlert').innerHTML = '';
-  document.getElementById('configModal').style.display = 'flex';
+  const c=getConfig();
+  document.getElementById('inputProxy').value=c.proxy; document.getElementById('inputSecret').value=c.secret;
+  document.getElementById('inputEmail').value=c.email; document.getElementById('inputToken').value=c.token;
+  document.getElementById('configAlert').innerHTML='';
+  document.getElementById('configModal').style.display='flex';
 }
 
-/* ── API via Proxy protegido ── */
+/* ── API ── */
 async function apiGet(endpoint) {
-  const { proxy, secret, email, token } = getConfig();
-  const res = await fetch(proxy + '/rest/v2' + endpoint, {
-    headers: {
-      'Authorization'      : 'Basic ' + btoa(email + ':' + token),
-      'X-User-Agent'       : 'Dashboard-Familia (dashboard@familia.com)',
-      'X-Dashboard-Secret' : secret,   // ← chave secreta enviada em cada requisição
-    }
+  const {proxy,secret,email,token}=getConfig();
+  const res=await fetch(proxy+'/rest/v2'+endpoint,{
+    headers:{'Authorization':'Basic '+btoa(email+':'+token),'X-User-Agent':'Dashboard-Familia (dashboard@familia.com)','X-Dashboard-Secret':secret}
   });
-  if (res.status === 401) throw new Error('401: Chave secreta incorreta ou proxy não configurado.');
-  if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+  if(res.status===401) throw new Error('401: Chave secreta incorreta.');
+  if(!res.ok) throw new Error('HTTP '+res.status+': '+await res.text());
   return res.json();
 }
 
-/* ── Estado ── */
-let state = { transactions:[], accounts:[], categories:[], budgets:[], period:'month' };
-let cEv, cCat, cTend;
-
-const getDateRange = p => {
-  const now=new Date(), y=now.getFullYear(), m=now.getMonth();
-  if (p==='month')   return { start:new Date(y,m,1),     end:new Date(y,m+1,0) };
-  if (p==='quarter') { const q=Math.floor(m/3); return { start:new Date(y,q*3,1), end:new Date(y,q*3+3,0) }; }
-  return { start:new Date(y,0,1), end:new Date(y,11,31) };
+/* ── Estado de período ── */
+const now = new Date();
+let state = {
+  mode: 'month',       // 'month' | 'quarter' | 'year'
+  year: now.getFullYear(),
+  month: now.getMonth(), // 0-11
+  quarter: Math.floor(now.getMonth()/3), // 0-3
+  transactions:[], accounts:[], categories:[], budgets:[],
 };
+
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MONTHS_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+function getDateRange() {
+  const {mode,year,month,quarter} = state;
+  if (mode==='month') {
+    return { start: new Date(year,month,1), end: new Date(year,month+1,0) };
+  }
+  if (mode==='quarter') {
+    return { start: new Date(year,quarter*3,1), end: new Date(year,quarter*3+3,0) };
+  }
+  return { start: new Date(year,0,1), end: new Date(year,11,31) };
+}
+
+function getPeriodLabel() {
+  const {mode,year,month,quarter} = state;
+  if (mode==='month')   return MONTHS[month] + ' ' + year;
+  if (mode==='quarter') return `${quarter+1}º Trimestre ${year}`;
+  return String(year);
+}
+
+function navigate(dir) {
+  const {mode} = state;
+  if (mode==='month') {
+    state.month += dir;
+    if (state.month > 11) { state.month=0; state.year++; }
+    if (state.month < 0)  { state.month=11; state.year--; }
+  } else if (mode==='quarter') {
+    state.quarter += dir;
+    if (state.quarter > 3) { state.quarter=0; state.year++; }
+    if (state.quarter < 0) { state.quarter=3; state.year--; }
+  } else {
+    state.year += dir;
+  }
+  loadAllData();
+}
+
+function goToToday() {
+  const n = new Date();
+  state.year    = n.getFullYear();
+  state.month   = n.getMonth();
+  state.quarter = Math.floor(n.getMonth()/3);
+  loadAllData();
+}
+
+function setMode(mode, btn) {
+  state.mode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAllData();
+}
+
 const fmt = d => d.toISOString().split('T')[0];
 
 /* ── Carregar dados ── */
 async function loadAllData() {
-  const btn = document.getElementById('btnRefresh');
-  btn.disabled = true; btn.textContent = '↻ Carregando...';
-  const errBar = document.getElementById('errBar');
-  errBar.style.display = 'none';
+  const btn=document.getElementById('btnRefresh');
+  btn.disabled=true; btn.textContent='↻ Carregando...';
+  document.getElementById('errBar').style.display='none';
+  document.getElementById('periodLabel').textContent = getPeriodLabel();
+
   try {
-    const { start, end } = getDateRange(state.period);
-    const [accounts, categories, transactions, budgets] = await Promise.all([
+    const {start,end} = getDateRange();
+    const [accounts,categories,transactions,budgets] = await Promise.all([
       apiGet('/accounts'),
       apiGet('/categories'),
-      apiGet('/transactions?start_date=' + fmt(start) + '&end_date=' + fmt(end)),
+      apiGet('/transactions?start_date='+fmt(start)+'&end_date='+fmt(end)),
       apiGet('/budgets'),
     ]);
-    state.accounts = accounts; state.categories = categories;
-    state.transactions = transactions; state.budgets = budgets;
+    state.accounts=accounts; state.categories=categories;
+    state.transactions=transactions; state.budgets=budgets;
     populateFilters(); applyFilters(); renderBudgets();
-    document.getElementById('lastUpdateText').textContent =
-      'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('lastUpdateText').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   } catch(err) {
     console.error(err);
-    errBar.textContent = '⚠ ' + err.message;
-    errBar.style.display = 'block';
+    document.getElementById('errBar').textContent='⚠ '+err.message;
+    document.getElementById('errBar').style.display='block';
   } finally {
-    btn.disabled = false; btn.textContent = '↻ Atualizar';
+    btn.disabled=false; btn.textContent='↻ Atualizar';
   }
 }
 
 /* ── Filtros ── */
 function populateFilters() {
-  const aS = document.getElementById('filterAccount');
-  const cS = document.getElementById('filterCategory');
-  aS.innerHTML = '<option value="all">Todas as contas</option>';
-  state.accounts.forEach(a => aS.innerHTML += `<option value="${a.id}">${a.name}</option>`);
-  cS.innerHTML = '<option value="all">Todas as categorias</option>';
-  state.categories.filter(c => !c.parent_id).forEach(c => cS.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+  const aS=document.getElementById('filterAccount');
+  const cS=document.getElementById('filterCategory');
+  const aVal=aS.value, cVal=cS.value;
+  aS.innerHTML='<option value="all">Todas as contas</option>';
+  state.accounts.forEach(a=>aS.innerHTML+=`<option value="${a.id}">${a.name}</option>`);
+  cS.innerHTML='<option value="all">Todas as categorias</option>';
+  state.categories.filter(c=>!c.parent_id).forEach(c=>cS.innerHTML+=`<option value="${c.id}">${c.name}</option>`);
+  aS.value=aVal; cS.value=cVal;
 }
 
 function applyFilters() {
-  let txs = [...state.transactions];
-  const acc = document.getElementById('filterAccount').value;
-  const cat = document.getElementById('filterCategory').value;
-  if (acc !== 'all') txs = txs.filter(t => String(t.account_id) === acc);
-  if (cat !== 'all') {
-    const ids = state.categories
-      .filter(c => String(c.id) === cat || String(c.parent_id) === cat)
-      .map(c => c.id);
-    txs = txs.filter(t => ids.includes(t.category_id));
+  let txs=[...state.transactions];
+  const acc=document.getElementById('filterAccount').value;
+  const cat=document.getElementById('filterCategory').value;
+  if(acc!=='all') txs=txs.filter(t=>String(t.account_id)===acc);
+  if(cat!=='all'){
+    const ids=state.categories.filter(c=>String(c.id)===cat||String(c.parent_id)===cat).map(c=>c.id);
+    txs=txs.filter(t=>ids.includes(t.category_id));
   }
   renderKPIs(txs); renderCharts(txs); renderTransactions(txs);
 }
 
-function setPeriod(p, btn) {
-  state.period = p;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  loadAllData();
-}
-
 /* ── Formatação ── */
-const BRL      = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'});
-const money    = c => BRL.format(c / 100);
-const catName  = id => { const c = state.categories.find(c => c.id === id); return c ? c.name : '—'; };
-const accName  = id => { const a = state.accounts.find(a => a.id === id); return a ? a.name : '—'; };
+const BRL     = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const money   = c => BRL.format(c/100);
+const catName = id => { const c=state.categories.find(c=>c.id===id); return c?c.name:'—'; };
+const accName = id => { const a=state.accounts.find(a=>a.id===id); return a?a.name:'—'; };
 
 /* ── KPIs ── */
 function renderKPIs(txs) {
-  const rec  = txs.filter(t => t.amount_cents > 0).reduce((s, t) => s + t.amount_cents, 0);
-  const desp = txs.filter(t => t.amount_cents < 0).reduce((s, t) => s + t.amount_cents, 0);
-  const sal  = rec + desp;
-  const maior = txs.filter(t => t.amount_cents < 0).reduce((m, t) => !m || t.amount_cents < m.amount_cents ? t : m, null);
+  const rec  = txs.filter(t=>t.amount_cents>0).reduce((s,t)=>s+t.amount_cents,0);
+  const desp = txs.filter(t=>t.amount_cents<0).reduce((s,t)=>s+t.amount_cents,0);
+  const sal  = rec+desp;
+  const maior= txs.filter(t=>t.amount_cents<0).reduce((m,t)=>!m||t.amount_cents<m.amount_cents?t:m,null);
   document.getElementById('kpiReceitas').textContent = money(rec);
   document.getElementById('kpiDespesas').textContent = money(Math.abs(desp));
   document.getElementById('kpiSaldo').textContent    = money(sal);
-  document.getElementById('kpiSaldo').className      = 'kpi-value ' + (sal >= 0 ? 'positive' : 'negative');
-  if (maior) {
-    document.getElementById('kpiMaiorDespesa').textContent   = money(Math.abs(maior.amount_cents));
-    document.getElementById('kpiMaiorDespesaCat').innerHTML  = `<span class="tag">${catName(maior.category_id)}</span> ${maior.description}`;
-  }
-  document.getElementById('kpiReceitasDelta').innerHTML  = `<span class="tag green">${txs.filter(t => t.amount_cents > 0).length} lançamentos</span>`;
-  document.getElementById('kpiDespesasDelta').innerHTML  = `<span class="tag red">${txs.filter(t => t.amount_cents < 0).length} lançamentos</span>`;
-  document.getElementById('kpiSaldoDelta').innerHTML     = sal >= 0
-    ? '<span class="up">▲ Positivo no período</span>'
-    : '<span class="down">▼ Negativo no período</span>';
+  document.getElementById('kpiSaldo').className      = 'kpi-value '+(sal>=0?'positive':'negative');
+  if(maior){ document.getElementById('kpiMaiorDespesa').textContent=money(Math.abs(maior.amount_cents)); document.getElementById('kpiMaiorDespesaCat').innerHTML=`<span class="tag">${catName(maior.category_id)}</span> ${maior.description}`; }
+  document.getElementById('kpiReceitasDelta').innerHTML =`<span class="tag green">${txs.filter(t=>t.amount_cents>0).length} lançamentos</span>`;
+  document.getElementById('kpiDespesasDelta').innerHTML =`<span class="tag red">${txs.filter(t=>t.amount_cents<0).length} lançamentos</span>`;
+  document.getElementById('kpiSaldoDelta').innerHTML    = sal>=0?'<span class="up">▲ Positivo no período</span>':'<span class="down">▼ Negativo no período</span>';
 }
 
 /* ── Gráficos ── */
-const COLORS = ['#1D9E75','#D85A30','#185FA5','#BA7517','#533DB7','#085041','#993C1D','#0C447C'];
-const MN = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez'};
-const chartOpts = (extra={}) => ({
-  responsive:true, maintainAspectRatio:false,
-  plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>' '+BRL.format(c.raw)}}},
-  ...extra
-});
+const COLORS=['#1D9E75','#D85A30','#185FA5','#BA7517','#533DB7','#085041','#993C1D','#0C447C'];
+let cEv,cCat,cTend;
 
-function renderCharts(txs) {
-  renderEvolucao(txs); renderCategorias(txs); renderTendencia(txs);
-}
+function renderCharts(txs){ renderEvolucao(txs); renderCategorias(txs); renderTendencia(txs); }
 
 function renderEvolucao(txs) {
-  const byM = {};
-  txs.forEach(t => {
-    const m = t.date.substring(0,7);
-    if (!byM[m]) byM[m] = {r:0, d:0};
-    if (t.amount_cents > 0) byM[m].r += t.amount_cents;
-    else byM[m].d += Math.abs(t.amount_cents);
+  // No modo mês: barras por dia. Nos demais: barras por mês.
+  const byKey={};
+  const isMes = state.mode==='month';
+
+  txs.forEach(t=>{
+    const key = isMes ? t.date : t.date.substring(0,7);
+    if(!byKey[key]) byKey[key]={r:0,d:0};
+    if(t.amount_cents>0) byKey[key].r+=t.amount_cents;
+    else byKey[key].d+=Math.abs(t.amount_cents);
   });
-  const labels = Object.keys(byM).sort();
-  if (cEv) cEv.destroy();
-  cEv = new Chart(document.getElementById('chartEvolucao'), {
+
+  const labels=Object.keys(byKey).sort();
+  const lFmt = isMes
+    ? labels.map(l=>{ const d=new Date(l+'T00:00:00'); return d.getDate()+'/'+MONTHS_SHORT[d.getMonth()]; })
+    : labels.map(l=>MONTHS_SHORT[+l.split('-')[1]-1]+'/'+l.split('-')[0].slice(2));
+
+  document.getElementById('chartEvolucaoTitle').textContent =
+    isMes ? 'Receitas × Despesas — Dia a Dia' : 'Receitas × Despesas — Por Mês';
+
+  if(cEv) cEv.destroy();
+  cEv=new Chart(document.getElementById('chartEvolucao'),{
     type:'bar',
-    data:{ labels:labels.map(l => MN[l.split('-')[1]] + '/' + l.split('-')[0].slice(2)),
-      datasets:[
-        {label:'Receitas', data:labels.map(l => (byM[l].r/100).toFixed(2)), backgroundColor:'#1D9E7580', borderColor:'#1D9E75', borderWidth:1.5, borderRadius:4},
-        {label:'Despesas', data:labels.map(l => (byM[l].d/100).toFixed(2)), backgroundColor:'#D85A3080', borderColor:'#D85A30', borderWidth:1.5, borderRadius:4},
-      ]},
-    options:chartOpts({scales:{x:{grid:{display:false},ticks:{color:'#888',font:{family:'DM Sans',size:11}}},y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{color:'#888',font:{family:'DM Sans',size:11},callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}})
+    data:{labels:lFmt,datasets:[
+      {label:'Receitas',data:labels.map(l=>(byKey[l].r/100).toFixed(2)),backgroundColor:'#1D9E7580',borderColor:'#1D9E75',borderWidth:1.5,borderRadius:3},
+      {label:'Despesas',data:labels.map(l=>(byKey[l].d/100).toFixed(2)),backgroundColor:'#D85A3080',borderColor:'#D85A30',borderWidth:1.5,borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+BRL.format(c.raw)}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#888',font:{family:'DM Sans',size:10},maxTicksLimit:isMes?15:12,autoSkip:true}},
+        y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{color:'#888',font:{family:'DM Sans',size:11},callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}
+      }
+    }
   });
 }
 
 function renderCategorias(txs) {
-  const byCat = {};
-  txs.filter(t => t.amount_cents < 0).forEach(t => {
-    const n = catName(t.category_id);
-    byCat[n] = (byCat[n] || 0) + Math.abs(t.amount_cents);
-  });
-  const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]).slice(0,8);
-  if (cCat) cCat.destroy();
-  cCat = new Chart(document.getElementById('chartCategorias'), {
+  const byCat={};
+  txs.filter(t=>t.amount_cents<0).forEach(t=>{const n=catName(t.category_id);byCat[n]=(byCat[n]||0)+Math.abs(t.amount_cents);});
+  const sorted=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(cCat) cCat.destroy();
+  cCat=new Chart(document.getElementById('chartCategorias'),{
     type:'doughnut',
-    data:{ labels:sorted.map(e => e[0]),
-      datasets:[{data:sorted.map(e => (e[1]/100).toFixed(2)), backgroundColor:COLORS, borderWidth:2, borderColor:'transparent'}]},
-    options:{responsive:true, maintainAspectRatio:false, cutout:'65%',
+    data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>(e[1]/100).toFixed(2)),backgroundColor:COLORS,borderWidth:2,borderColor:'transparent'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
       plugins:{legend:{position:'right',labels:{color:'#888',font:{family:'DM Sans',size:11},boxWidth:10,padding:10}},
       tooltip:{callbacks:{label:c=>' '+BRL.format(c.raw)}}}}
   });
 }
 
 function renderTendencia(txs) {
-  const sorted = [...txs].sort((a,b) => a.date.localeCompare(b.date));
-  let acc = 0;
-  const pts = sorted.map(t => { acc += t.amount_cents; return { x:t.date, y:(acc/100).toFixed(2) }; });
-  const labels = pts.map(p => new Date(p.x+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));
-  if (cTend) cTend.destroy();
-  cTend = new Chart(document.getElementById('chartTendencia'), {
+  const sorted=[...txs].sort((a,b)=>a.date.localeCompare(b.date));
+  let acc=0;
+  const pts=sorted.map(t=>{acc+=t.amount_cents;return{x:t.date,y:(acc/100).toFixed(2)};});
+  const labels=pts.map(p=>new Date(p.x+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}));
+  if(cTend) cTend.destroy();
+  cTend=new Chart(document.getElementById('chartTendencia'),{
     type:'line',
-    data:{ labels, datasets:[{label:'Saldo', data:pts.map(p=>p.y), borderColor:'#185FA5', backgroundColor:'rgba(24,95,165,0.08)', fill:true, tension:0.4, pointRadius:0, borderWidth:2}]},
-    options:chartOpts({scales:{x:{grid:{display:false},ticks:{color:'#888',maxTicksLimit:6,font:{family:'DM Sans',size:10}}},y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{color:'#888',font:{family:'DM Sans',size:10},callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}})
+    data:{labels,datasets:[{label:'Saldo',data:pts.map(p=>p.y),borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+BRL.format(c.raw)}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#888',maxTicksLimit:6,font:{family:'DM Sans',size:10}}},
+      y:{grid:{color:'rgba(128,128,128,0.1)'},ticks:{color:'#888',font:{family:'DM Sans',size:10},callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}
   });
 }
 
 /* ── Orçamentos ── */
 function renderBudgets() {
-  const c = document.getElementById('budgetList');
-  if (!state.budgets.length) { c.innerHTML='<div class="state-overlay"><span style="color:var(--text-hint);">Nenhum orçamento configurado.</span></div>'; return; }
-  c.innerHTML = state.budgets.map(b => {
-    const spent = Math.abs(b.amount_in_cents||0), limit = Math.abs(b.total||b.budgeted_amount_in_cents||1);
-    const pct = Math.min(Math.round(spent/limit*100), 100);
-    const cls = pct>=100?'over':pct>=80?'warn':'ok';
-    return `<div class="budget-item"><div class="budget-row"><span class="budget-name">${catName(b.category_id)||b.name||'—'}</span><span class="budget-pct">${money(spent)} / ${money(limit)} <strong>(${pct}%)</strong></span></div><div class="progress-track"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div></div>`;
+  const c=document.getElementById('budgetList');
+  if(!state.budgets.length){c.innerHTML='<div class="state-overlay"><span style="color:var(--text-hint);">Nenhum orçamento configurado.</span></div>';return;}
+  c.innerHTML=state.budgets.map(b=>{
+    const spent=Math.abs(b.amount_in_cents||0),limit=Math.abs(b.total||b.budgeted_amount_in_cents||1);
+    const pct=Math.min(Math.round(spent/limit*100),100);
+    const cls=pct>=100?'over':pct>=80?'warn':'ok';
+    return`<div><div class="budget-row"><span class="budget-name">${catName(b.category_id)||b.name||'—'}</span><span class="budget-pct">${money(spent)} / ${money(limit)} <strong>(${pct}%)</strong></span></div><div class="progress-track"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div></div>`;
   }).join('');
 }
 
 /* ── Transações ── */
 function renderTransactions(txs) {
-  const sorted = [...txs].sort((a,b) => b.date.localeCompare(a.date)).slice(0,50);
-  document.getElementById('txCount').textContent = sorted.length + ' de ' + txs.length + ' transações';
-  if (!sorted.length) { document.getElementById('txContainer').innerHTML='<div class="state-overlay"><span style="color:var(--text-hint);">Nenhuma transação no período.</span></div>'; return; }
-  const rows = sorted.map(t => {
-    const isPos = t.amount_cents > 0;
-    const dt = new Date(t.date+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'});
-    return `<tr><td style="color:var(--text-secondary);">${dt}</td><td>${t.description||'—'}</td><td>${catName(t.category_id)}</td><td>${accName(t.account_id)}</td><td><span class="tag ${isPos?'green':'red'}">${isPos?'Receita':'Despesa'}</span></td><td class="tx-amount ${isPos?'positive':'negative'}">${money(Math.abs(t.amount_cents))}</td></tr>`;
+  const sorted=[...txs].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('txCount').textContent=sorted.length+' transações';
+  if(!sorted.length){document.getElementById('txContainer').innerHTML='<div class="state-overlay"><span style="color:var(--text-hint);">Nenhuma transação no período.</span></div>';return;}
+  const rows=sorted.map(t=>{
+    const isPos=t.amount_cents>0;
+    const dt=new Date(t.date+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'});
+    return`<tr><td style="color:var(--text-secondary);">${dt}</td><td>${t.description||'—'}</td><td>${catName(t.category_id)}</td><td>${accName(t.account_id)}</td><td><span class="tag ${isPos?'green':'red'}">${isPos?'Receita':'Despesa'}</span></td><td class="tx-amount ${isPos?'positive':'negative'}">${money(Math.abs(t.amount_cents))}</td></tr>`;
   }).join('');
-  document.getElementById('txContainer').innerHTML =
-    `<table class="tx-table"><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Conta</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('txContainer').innerHTML=`<table class="tx-table"><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Conta</th><th>Tipo</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 /* ── Init ── */
-window.addEventListener('DOMContentLoaded', () => {
-  const { proxy, secret, email, token } = getConfig();
-  if (proxy && secret && email && token) {
-    document.getElementById('configModal').style.display = 'none';
-    document.getElementById('mainContent').style.display = 'block';
-    document.getElementById('btnRefresh').disabled = false;
+window.addEventListener('DOMContentLoaded',()=>{
+  const {proxy,secret,email,token}=getConfig();
+  document.getElementById('periodLabel').textContent=getPeriodLabel();
+  if(proxy&&secret&&email&&token){
+    document.getElementById('configModal').style.display='none';
+    document.getElementById('mainContent').style.display='block';
+    document.getElementById('btnRefresh').disabled=false;
     loadAllData();
   } else {
-    document.getElementById('inputProxy').value  = proxy;
-    document.getElementById('inputSecret').value = secret;
-    document.getElementById('inputEmail').value  = email;
-    document.getElementById('inputToken').value  = token;
+    document.getElementById('inputProxy').value=proxy;
+    document.getElementById('inputSecret').value=secret;
+    document.getElementById('inputEmail').value=email;
+    document.getElementById('inputToken').value=token;
   }
 });
 </script>
