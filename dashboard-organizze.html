@@ -640,6 +640,28 @@ function applyFilters() {
   // 3. Remover transferências internas
   txs = txs.filter(t => !isInternalTransfer(t, selectedIds));
 
+  // 4. Deduplicar transferências externas: a API retorna dois lançamentos para cada
+  //    transferência (um em cada conta). Quando ambos passam pelo filtro (ex: todas as contas),
+  //    manter apenas um — preferencialmente o de SAÍDA (amount_cents < 0), pois ele tem
+  //    a conta de origem como account_id, facilitando a exibição correta.
+  const seenTransferPairs = new Set();
+  // Primeiro, ordenar para que o lançamento de saída venha antes do de entrada
+  txs.sort((a, b) => {
+    if (isTransfer(a) && isTransfer(b) &&
+        [a.id, a.oposite_transaction_id].sort().join('_') ===
+        [b.id, b.oposite_transaction_id].sort().join('_')) {
+      return a.amount_cents - b.amount_cents; // negativo (saída) primeiro
+    }
+    return b.date.localeCompare(a.date); // manter ordem cronológica para os demais
+  });
+  txs = txs.filter(t => {
+    if (!isTransfer(t)) return true;
+    const pairKey = [t.id, t.oposite_transaction_id].sort().join('_');
+    if (seenTransferPairs.has(pairKey)) return false;
+    seenTransferPairs.add(pairKey);
+    return true;
+  });
+
   // 4. Faturas com vencimento no período — adicionar como despesa virtual na conta pagadora
   //    Evitar dupla contagem: se já existe pagamento real (paid_credit_card_id) nas transações,
   //    não somar novamente.
