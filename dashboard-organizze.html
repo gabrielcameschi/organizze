@@ -1047,7 +1047,10 @@ async function openInvoiceModal(cardId, cardName, dueDate, closingDate) {
     const invoice  = invoices.find(inv => inv.date === dueDate) || invoices[invoices.length-1];
     if (!invoice) throw new Error('Fatura não encontrada.');
 
-    const items = await apiGet('/transactions?credit_card_id=' + cardId + '&invoice_id=' + invoice.id);
+    const allItems = await apiGet('/transactions?credit_card_id=' + cardId + '&invoice_id=' + invoice.id);
+    // Manter apenas lançamentos do cartão (credit_card_id preenchido)
+    // Os lançamentos da conta corrente (pagamento da fatura) não devem aparecer aqui
+    const items = allItems.filter(t => t.credit_card_id != null);
 
     // Resumo
     const total    = Math.abs(invoice.amount_cents);
