@@ -1002,9 +1002,12 @@ function renderTransactions(txs) {
     }
 
     const isPos=t.amount_cents>0;
+    const parcela = t.total_installments > 1
+      ? ` <span style="font-size:.7rem;color:var(--text-hint);font-weight:400;">${t.installment}/${t.total_installments}</span>`
+      : '';
     return`<tr>
       <td style="color:var(--text-secondary);">${dt}</td>
-      <td>${t.description||'—'}</td>
+      <td>${t.description||'—'}${parcela}</td>
       <td>${catName(t.category_id)}</td>
       <td>${accName(t.account_id)}</td>
       <td><span class="tag ${isPos?'green':'red'}">${isPos?'Receita':'Despesa'}</span></td>
@@ -1096,9 +1099,12 @@ async function openInvoiceModal(cardId, cardName, dueDate, closingDate) {
     const rows = sorted.map(t => {
       const dt = new Date(t.date+'T00:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'2-digit'});
       const isPos = t.amount_cents > 0;
+      const parcela = t.total_installments > 1
+        ? ` <span style="font-size:.7rem;color:var(--text-hint);font-weight:400;">${t.installment}/${t.total_installments}</span>`
+        : '';
       return `<tr>
         <td style="color:var(--text-secondary);">${dt}</td>
-        <td>${t.description||'—'}</td>
+        <td>${t.description||'—'}${parcela}</td>
         <td>${catName(t.category_id)}</td>
         <td class="tx-amount ${isPos?'positive':'negative'}">${isPos?'+':'−'}${money(Math.abs(t.amount_cents))}</td>
       </tr>`;
