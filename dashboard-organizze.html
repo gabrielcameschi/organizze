@@ -1050,15 +1050,12 @@ async function openInvoiceModal(cardId, cardName, dueDate, closingDate, invoiceI
     const invoice  = invoices.find(inv => inv.id === invoiceId);
     if (!invoice) throw new Error('Fatura não encontrada.');
 
-    // Buscar lançamentos num período estendido em torno da fatura
-    // O filtro definitivo é credit_card_invoice_id + credit_card_id — nunca a data
-    const extStart = new Date(invoice.starting_date + 'T00:00:00');
-    extStart.setDate(extStart.getDate() - 30);
-    const extEnd = new Date(invoice.closing_date + 'T00:00:00');
-    extEnd.setDate(extEnd.getDate() + 30);
+    // Buscar lançamentos do período exato da fatura (starting_date → closing_date)
+    // O filtro definitivo é credit_card_invoice_id + credit_card_id — nunca a data.
+    // Usamos o período exato para evitar atingir o limite de 500 registros da API.
     const allItems = await apiGet(
-      '/transactions?start_date=' + fmt(extStart) +
-      '&end_date='   + fmt(extEnd)
+      '/transactions?start_date=' + invoice.starting_date +
+      '&end_date='   + invoice.closing_date
     );
     const items = allItems.filter(t =>
       t.credit_card_invoice_id === invoiceId &&
