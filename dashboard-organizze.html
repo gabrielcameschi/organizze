@@ -1053,8 +1053,12 @@ async function openInvoiceModal(cardId, cardName, dueDate, closingDate) {
       '/transactions?start_date=' + invoice.starting_date +
       '&end_date=' + invoice.closing_date
     );
-    // Filtrar apenas os lançamentos que pertencem a esta fatura específica
-    const items = allItems.filter(t => t.credit_card_invoice_id === invoice.id);
+    // Filtrar pelo credit_card_invoice_id E pelo credit_card_id
+    // (IDs de fatura são sequenciais globais — podem colidir entre cartões diferentes)
+    const items = allItems.filter(t =>
+      t.credit_card_invoice_id === invoice.id &&
+      t.credit_card_id === cardId
+    );
 
     // Resumo
     const total    = Math.abs(invoice.amount_cents);
