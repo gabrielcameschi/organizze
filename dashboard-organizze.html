@@ -922,7 +922,7 @@ function renderInvoices() {
     const amountCls = isPaid ? 'paid' : 'open';
 
     return `
-      <div class="invoice-item" onclick="openInvoiceModal(${inv.cardId}, '${inv.cardName.replace(/'/g,"\'")}', '${inv.date}', '${inv.closing_date}')">
+      <div class="invoice-item" onclick="openInvoiceModal(${inv.cardId}, '${inv.cardName.replace(/'/g,"\'")}', '${inv.date}', '${inv.closing_date}', ${inv.id})">
         <div class="invoice-card-name">${inv.cardName} <span style="font-size:.65rem;color:var(--text-hint);font-weight:400;text-transform:none;">— clique para ver lançamentos</span></div>
         <div class="invoice-status ${statusCls}">${statusTxt}</div>
         <div class="invoice-amount ${amountCls}">${money(Math.abs(displayAmount))}</div>
@@ -1031,7 +1031,7 @@ function closeInvoiceModal(e) {
   }
 }
 
-async function openInvoiceModal(cardId, cardName, dueDate, closingDate) {
+async function openInvoiceModal(cardId, cardName, dueDate, closingDate, invoiceId) {
   const modal = document.getElementById('invoiceModal');
   modal.style.display = 'flex';
 
@@ -1047,12 +1047,11 @@ async function openInvoiceModal(cardId, cardName, dueDate, closingDate) {
   try {
     // Buscar lançamentos da fatura: precisamos do invoice_id
     const invoices = await apiGet('/credit_cards/' + cardId + '/invoices');
-    const invoice  = invoices.find(inv => inv.date === dueDate) || invoices[invoices.length-1];
+    const invoice  = invoices.find(inv => inv.id === invoiceId);
     if (!invoice) throw new Error('Fatura não encontrada.');
 
-    // Buscar lançamentos num período estendido (30 dias antes e depois da fatura)
-    // para capturar lançamentos que o banco alocou fora do período esperado.
-    // O filtro definitivo é credit_card_invoice_id + credit_card_id — não a data.
+    // Buscar lançamentos num período estendido em torno da fatura
+    // O filtro definitivo é credit_card_invoice_id + credit_card_id — nunca a data
     const extStart = new Date(invoice.starting_date + 'T00:00:00');
     extStart.setDate(extStart.getDate() - 30);
     const extEnd = new Date(invoice.closing_date + 'T00:00:00');
@@ -1061,10 +1060,8 @@ async function openInvoiceModal(cardId, cardName, dueDate, closingDate) {
       '/transactions?start_date=' + fmt(extStart) +
       '&end_date='   + fmt(extEnd)
     );
-    // Filtrar pelo credit_card_invoice_id E pelo credit_card_id
-    // (IDs de fatura são sequenciais globais — podem colidir entre cartões diferentes)
     const items = allItems.filter(t =>
-      t.credit_card_invoice_id === invoice.id &&
+      t.credit_card_invoice_id === invoiceId &&
       t.credit_card_id === cardId
     );
 
