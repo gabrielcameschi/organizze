@@ -489,11 +489,11 @@ async function fetchAllTransactions() {
   const txs = [];
   for (let y = YEAR_START; y <= YEAR_END; y++) {
     for (let m = 1; m <= 12; m++) {
-      // Skip future months (beyond Dec 2026)
-      if (y === YEAR_END && m > 12) break;
       try {
         const data = await apiFetch(`/rest/v2/transactions?year=${y}&month=${m}`);
-        txs.push(...data);
+        // Aceita apenas transações cuja data pertence exatamente ao mês consultado
+        const prefix = `${y}-${String(m).padStart(2,'0')}-`;
+        data.forEach(t => { if (t.date && t.date.startsWith(prefix)) txs.push(t); });
       } catch(e) { /* tolerate single month failures */ }
     }
   }
@@ -522,11 +522,12 @@ async function loadData() {
     // 2. Fetch all transactions
     const allTxsRaw = await fetchAllTransactions();
 
-    // 3. Deduplicar por ID (a API repete parcelas em cada mês consultado)
+    // 3. Deduplicar por ID+data (evita duplicatas da mesma requisição, preserva parcelas de meses diferentes)
     const seen = new Set();
     const allTxs = allTxsRaw.filter(t => {
-      if (seen.has(t.id)) return false;
-      seen.add(t.id);
+      const key = t.id + '|' + t.date;
+      if (seen.has(key)) return false;
+      seen.add(key);
       return true;
     });
 
