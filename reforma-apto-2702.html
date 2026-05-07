@@ -520,9 +520,17 @@ async function loadData() {
     if (!catId) throw new Error(`Categoria "${CATEGORY_NAME}" não encontrada.`);
 
     // 2. Fetch all transactions
-    const allTxs = await fetchAllTransactions();
+    const allTxsRaw = await fetchAllTransactions();
 
-    // 3. Filter by category (expenses only — negative amount)
+    // 3. Deduplicar por ID (a API repete parcelas em cada mês consultado)
+    const seen = new Set();
+    const allTxs = allTxsRaw.filter(t => {
+      if (seen.has(t.id)) return false;
+      seen.add(t.id);
+      return true;
+    });
+
+    // 4. Filter by category (expenses only — negative amount)
     const txs = allTxs.filter(t =>
       t.category_id === catId && Number(t.amount_cents) < 0
     );
