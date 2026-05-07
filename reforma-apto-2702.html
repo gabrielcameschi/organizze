@@ -470,7 +470,7 @@ async function saveAndConnect() {
 
 // ── API ───────────────────────────────────
 function authHeader() {
-  return 'Basic ' + btoa(TOKEN + ':');
+  return 'Basic ' + btoa(EMAIL + ':' + TOKEN);
 }
 async function apiFetch(path) {
   const r = await fetch(PROXY + path, {
