@@ -484,20 +484,11 @@ async function apiFetch(path) {
   return r.json();
 }
 
-// ── Fetch transactions month by month ────
+// ── Fetch transactions (mês atual — API não expõe histórico)
 async function fetchAllTransactions() {
-  const txs = [];
-  for (let y = YEAR_START; y <= YEAR_END; y++) {
-    for (let m = 1; m <= 12; m++) {
-      try {
-        const data = await apiFetch(`/rest/v2/transactions?year=${y}&month=${m}`);
-        // Aceita apenas transações cuja data pertence exatamente ao mês consultado
-        const prefix = `${y}-${String(m).padStart(2,'0')}-`;
-        data.forEach(t => { if (t.date && t.date.startsWith(prefix)) txs.push(t); });
-      } catch(e) { /* tolerate single month failures */ }
-    }
-  }
-  return txs;
+  const now = new Date();
+  const data = await apiFetch(`/rest/v2/transactions?year=${now.getFullYear()}&month=${now.getMonth()+1}`);
+  return data;
 }
 
 // ── Find category ID ─────────────────────
@@ -519,19 +510,10 @@ async function loadData() {
     const catId = await findCategoryId();
     if (!catId) throw new Error(`Categoria "${CATEGORY_NAME}" não encontrada.`);
 
-    // 2. Fetch all transactions
-    const allTxsRaw = await fetchAllTransactions();
+    // 2. Fetch transactions do mês atual
+    const allTxs = await fetchAllTransactions();
 
-    // 3. Deduplicar por ID+data (evita duplicatas da mesma requisição, preserva parcelas de meses diferentes)
-    const seen = new Set();
-    const allTxs = allTxsRaw.filter(t => {
-      const key = t.id + '|' + t.date;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-    // 4. Filter by category (expenses only — negative amount)
+    // 3. Filtrar por categoria e despesas
     const txs = allTxs.filter(t =>
       t.category_id === catId && Number(t.amount_cents) < 0
     );
@@ -557,7 +539,9 @@ function processAndRender(txs) {
 
   let totalCents = 0;
   txs.forEach(t => {
-    const d = new Date(t.date);
+    // Usa created_at como data real do gasto (API não expõe histórico via date)
+    const raw = (t.created_at || t.date).substring(0, 10);
+    const d = new Date(raw + 'T12:00:00');
     const k = monthKey(d.getFullYear(), d.getMonth()+1);
     const amt = Math.abs(Number(t.amount_cents));
     if (monthly[k] !== undefined) monthly[k] += amt;
@@ -678,13 +662,14 @@ function renderChartMensal(labels, data) {
 
 // ── Table ─────────────────────────────────
 function renderTable(txs) {
-  const sorted = [...txs].sort((a,b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...txs].sort((a,b) => new Date(b.created_at||b.date) - new Date(a.created_at||a.date));
   if (!sorted.length) {
     document.getElementById('tableWrap').innerHTML = '<div class="empty">Nenhum lançamento encontrado nesta categoria.</div>';
     return;
   }
   const rows = sorted.map(t => {
-    const d   = new Date(t.date + 'T12:00:00');
+    const raw = (t.created_at || t.date).substring(0,10);
+    const d   = new Date(raw + 'T12:00:00');
     const dFmt = d.toLocaleDateString('pt-BR');
     const amt  = Math.abs(Number(t.amount_cents)) / 100;
     return `<tr>
